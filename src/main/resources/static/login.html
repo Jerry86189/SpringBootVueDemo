@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+
+<div id="loginApp">
+    <el-form @submit.native.prevent="submitLoginForm">
+        <h1>Login</h1>
+        <el-input v-model="username" placeholder="Username"></el-input>
+        <el-input v-model="password" type="password" placeholder="Password"></el-input>
+        <el-button type="primary" native-type="submit">Login</el-button>
+        <el-link href="register.html">Register</el-link>
+    </el-form>
+    <p>{{ errorMessage }}</p>
+</div>
+
+<script>
+    new Vue({
+        el: "#loginApp",
+        data: {
+            username: '',
+            password: '',
+            errorMessage: ''
+        },
+        methods: {
+            submitLoginForm: function () {
+                axios.post('/users/login', {
+                    username: this.username,
+                    password: this.password
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => {
+                        let expirationDate = new Date().getTime() + 1000*60*60*24; // 1 day later
+                        localStorage.setItem('token', JSON.stringify({
+                            value: response.data.token,
+                            expires: expirationDate
+                        }));
+                        localStorage.setItem('user', JSON.stringify({
+                            value: response.data.user, // Saving the entire user object
+                            expires: expirationDate
+                        }));
+
+                        // Checking the role of the user
+                        if(response.data.user.role === 'ADMIN') {
+                            window.location.href = '/admin/admin.html';
+                        } else {
+                            window.location.href = '/user/user.html';
+                        }
+                    })
+                    .catch(error => {
+                        this.errorMessage = error.message
+                        if(error.response && error.response.status === 401) {
+                            this.errorMessage = error.response.data;
+                        } else {
+                            this.errorMessage = 'An error occurred';
+                        }
+                    });
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

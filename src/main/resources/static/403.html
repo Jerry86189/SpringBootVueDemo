@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>403</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+    Vue.use(ElementUI);
+
+    new Vue({
+        el: '#app',
+        template: `
+            <el-container>
+                <el-header>
+                    <el-menu theme="dark" mode="horizontal">
+                        <el-menu-item index="1">My App</el-menu-item>
+                    </el-menu>
+                </el-header>
+                <el-main>
+                    <el-alert
+                            title="Oops! Permission Denied."
+                            type="error"
+                            description="You don't have the necessary permissions to view this page. Please check your role and try again.">
+                    </el-alert>
+                </el-main>
+            </el-container>
+        `
+    });
+</script>
+
+<style>
+    .el-header {
+        background-color: #b3c0d1;
+        line-height: 60px;
+    }
+</style>
+
+</body>
+</html>

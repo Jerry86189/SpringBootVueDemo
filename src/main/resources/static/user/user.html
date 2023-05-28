@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Norm Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+
+<div id="userPage">
+    <el-container>
+        <el-header>
+            <el-row>
+                <el-col :span="24">
+                    <h1>{{ pageTitle }}</h1>
+                </el-col>
+            </el-row>
+        </el-header>
+        <el-main>
+            <el-row>
+                <el-col :span="6">
+                    <el-menu style="height: 100%;" @select="handleSelect">
+                        <el-menu-item index="index">Index</el-menu-item>
+                        <el-menu-item index="settings">User Settings</el-menu-item>
+                        <el-menu-item index="train">Train Model</el-menu-item>
+                    </el-menu>
+                </el-col>
+                <el-col :span="18">
+                    <el-container>
+                        <el-main>
+                            <div v-show="currentPage === 'index'">
+                                <h2>Index</h2>
+                                <p>This is the index page.</p>
+                            </div>
+                            <div v-show="currentPage === 'settings'">
+                                <h2>User Settings</h2>
+                                <el-form ref="form" :model="user.value.value" label-width="120px">
+                                    <el-form-item label="UserId">
+                                        {{ user.value.value.userId }}
+                                    </el-form-item>
+                                    <el-form-item label="Username">
+                                        <el-input v-model="user.value.value.username"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="Password">
+                                        <el-input :type="showPassword ? 'text' : 'password'"
+                                                  v-model="user.value.value.password"></el-input>
+                                        <el-checkbox v-model="showPassword">Show Password</el-checkbox>
+                                    </el-form-item>
+                                    <el-form-item label="Role">
+                                        {{ user.value.value.role }}
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="danger" @click="deleteUser">Delete Account</el-button>
+                                        <el-button type="info" @click="logout">Logout</el-button>
+                                        <el-button type="primary" @click="updateUser">Update Info</el-button>
+                                        <el-button type="success" @click="showLocalMessage">Show Local Message</el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </div>
+                            <div v-show="currentPage === 'train'">
+                                <h2>Train Model</h2>
+                                <p>This is the train model page.</p>
+                            </div>
+                        </el-main>
+                    </el-container>
+                </el-col>
+            </el-row>
+        </el-main>
+    </el-container>
+</div>
+
+<script>
+    new Vue({
+        el: '#userPage',
+        data: function () {
+            return {
+                pageTitle: 'User Page',
+                currentPage: 'index',
+                showPassword: false,
+                user: {
+                    value: JSON.parse(localStorage.getItem('user'))
+                },
+            }
+        },
+        methods: {
+            handleSelect(key) {
+                this.currentPage = key;
+            },
+            updateUser() {
+                axios.put('/users/update_self_account', {
+                    user: {
+                        userId: this.user.value.value.userId,
+                        username: this.user.value.value.username,
+                        password: this.user.value.value.password,
+                    }
+                })
+                    .then((response) => {
+                        let expirationDate = JSON.parse(localStorage.getItem('user')).expires;
+                        localStorage.setItem('user', JSON.stringify({
+                            value: response.data,
+                            expires: expirationDate
+                        }));
+                        this.user.value.value = response.data;
+                        this.$message({
+                            message: 'Account update successful!',
+                            type: 'success'
+                        });
+                    })
+                    .catch((error) => {
+                        this.user.value.value.username = JSON.parse(localStorage.getItem('user')).value.username;
+                        this.user.value.value.password = JSON.parse(localStorage.getItem('user')).value.password;
+                        this.$message({
+                            message: error.response.data,
+                            type: 'error'
+                        });
+                    });
+            },
+            logout() {
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+            },
+            showLocalMessage() {
+                alert("username: " + this.user.value.value.username + "\n" +
+                    "password: " + this.user.value.value.password + "\n" +
+                    "id: " + this.user.value.value.userId + "\n" +
+                    "role: " + this.user.value.value.role)
+            },
+        },
+        created() {
+            let token = JSON.parse(localStorage.getItem('token'));
+            if (!token || new Date().getTime() > token.expires) {
+                window.location.href = '/login.html';
+            }
+        },
+    });
+</script>
+
+</body>
+</html>

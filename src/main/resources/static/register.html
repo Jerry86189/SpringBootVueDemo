@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+
+
+<div id="registerApp">
+    <el-form @submit.native.prevent="submitForm">
+        <h1>Register</h1>
+        <el-input v-model="username" placeholder="Username"></el-input>
+        <el-input v-model="password" type="password" placeholder="Password"></el-input>
+        <el-input v-model="confirmPassword" type="password" placeholder="Confirm Password"></el-input>
+        <el-select v-model="role" placeholder="Role">
+            <el-option value="NORM" label="Normal User"></el-option>
+            <el-option value="ADMIN" label="Admin"></el-option>
+        </el-select>
+        <el-input v-if="(this.role === 'ADMIN')" v-model="otherAdminUsername" placeholder="Other Admin Username"></el-input>
+        <el-input v-if="(this.role === 'ADMIN')" v-model="otherAdminPassword" type="password" placeholder="Other Admin Password"></el-input>
+        <el-button type="primary" native-type="submit">Register</el-button>
+    </el-form>
+    <el-link href="login.html">Login</el-link>
+</div>
+
+<script>
+    new Vue({
+        el: "#registerApp",
+        data: {
+            username: '',
+            password: '',
+            confirmPassword: '',
+            role: 'NORM',
+            otherAdminUsername: '',
+            otherAdminPassword: ''
+        },
+        methods: {
+            submitForm: function () {
+                if (this.password !== this.confirmPassword) {
+                    this.$message.error('The two passwords do not match!');
+                    return;
+                }
+                const user = {
+                    username: this.username,
+                    password: this.password,
+                    role: this.role
+                };
+                const registerRequest = {
+                    user: user,
+                    otherAdminUsername: this.otherAdminUsername,
+                    otherAdminPassword: this.otherAdminPassword
+                };
+                axios.post('/users/register', registerRequest, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => {
+                        this.$message.success('Registration successful!');
+                        window.location.href = '/login.html';
+                    })
+                    .catch(error => {
+                        if (error.response && error.response.status === 400) {
+                            this.$message.error(error.response.data);
+                        } else {
+                            this.$message.error('An error occurred during registration');
+                        }
+                    });
+            }
+        }
+    })
+</script>
+
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="adminPage">
+    <el-container>
+        <el-header>
+            <el-row>
+                <el-col :span="24">
+                    <h1>{{ pageTitle }}</h1>
+                </el-col>
+            </el-row>
+        </el-header>
+        <el-main>
+            <el-row>
+                <el-col :span="6">
+                    <el-menu style="height: 100%;" router @select="handleSelect">
+                        <el-menu-item index="index">Index</el-menu-item>
+                        <el-menu-item index="settings">User Settings</el-menu-item>
+                        <el-menu-item index="train">Train Model</el-menu-item>
+                        <el-menu-item index="edit">Edit Users</el-menu-item>
+                    </el-menu>
+                </el-col>
+                <el-col :span="18">
+                    <el-container>
+                        <el-main>
+                            <div v-show="currentPage === 'index'">
+                                <h2>Index</h2>
+                                <p>This is the index page.</p>
+                            </div>
+                            <div v-show="currentPage === 'settings'">
+                                <h2>User Settings</h2>
+                                <el-form ref="form" :model="user.value.value" label-width="120px">
+                                    <el-form-item label="UserId">
+                                        {{ user.value.value.userId }}
+                                    </el-form-item>
+                                    <el-form-item label="Username">
+                                        <el-input v-model="user.value.value.username"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="Password">
+                                        <el-input :type="showPassword ? 'text' : 'password'"
+                                                  v-model="user.value.value.password"></el-input>
+                                        <el-checkbox v-model="showPassword">Show Password</el-checkbox>
+                                    </el-form-item>
+                                    <el-form-item label="Role">
+                                        {{ user.value.value.role }}
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="danger" @click="deleteUser">Delete Account</el-button>
+                                        <el-button type="info" @click="logout">Logout</el-button>
+                                        <el-button type="primary" @click="updateUser">Update Info</el-button>
+                                        <!-- 新增的更新信息按钮 -->
+                                        <el-button type="success" @click="showLocalMessage">Show Local Message
+                                        </el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </div>
+                            <div v-show="currentPage === 'train'">
+                                <h2>Train Model</h2>
+                                <p>This is the train model page.</p>
+                            </div>
+                            <div v-show="currentPage === 'edit'">
+                                <h2>Edit Users</h2>
+                                <div id="searchBox">
+                                    <el-input v-model="searchTerm" placeholder="Enter user ID or name"></el-input>
+                                    <el-select v-model="searchMode" placeholder="Select search mode">
+                                        <el-option label="By name" value="byName"></el-option>
+                                        <el-option label="By ID" value="byId"></el-option>
+                                    </el-select>
+                                    <el-button @click="searchUsers">Search</el-button>
+                                </div>
+                                <template>
+                                    <div class="users-table">
+                                        <el-radio-group v-model="selectedUserType" @change="handleUserTypeChange">
+                                            <el-radio label="all users">All Users</el-radio>
+                                            <el-radio label="norm users">Only Norm Users</el-radio>
+                                        </el-radio-group>
+                                        <el-table
+                                                :data="users"
+                                                border
+                                                style="width: 100%">
+                                            <el-table-column
+                                                    prop="userId"
+                                                    label="User Id"
+                                                    width="180">
+                                            </el-table-column>
+                                            <el-table-column
+                                                    prop="username"
+                                                    label="Username"
+                                                    width="180">
+                                            </el-table-column>
+                                            <el-table-column
+                                                    label="Password"
+                                                    width="180">
+                                                <template slot-scope="scope">
+                                                    <span>*******</span>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column
+                                                    prop="role"
+                                                    label="Role">
+                                            </el-table-column>
+                                            <el-table-column
+                                                    v-if="selectedUserType === 'norm users'"
+                                                    label="Actions">
+                                                <template slot-scope="scope">
+                                                    <el-button type="danger" icon="el-icon-delete" @click="confirmDelete(scope.row.userId)">Delete</el-button>
+                                                </template>
+                                            </el-table-column>
+                                        </el-table>
+                                    </div>
+                                </template>
+                                <el-pagination
+                                        @size-change="handleSizeChange"
+                                        @current-change="handleCurrentChange"
+                                        :current-page="currentPageNum"
+                                        :page-size="30"
+                                        layout="total, prev, pager, next, jumper"
+                                        :total="totalCount">
+                                </el-pagination>
+                            </div>
+                        </el-main>
+                    </el-container>
+                </el-col>
+            </el-row>
+        </el-main>
+    </el-container>
+
+    <el-dialog
+            title="Confirm your identity"
+            :visible.sync="dialogVisible"
+            width="30%"
+            @close="dialogVisible = false">
+        <el-input v-model="deleteUsername" placeholder="Username"></el-input>
+        <el-input v-model="deletePassword" type="password" placeholder="Password"></el-input>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="cancelDelete">Cancel</el-button>
+            <el-button type="primary" @click="deleteUser">Confirm</el-button>
+        </span>
+    </el-dialog>
+
+    <el-dialog
+            title="Confirm your identity to update info"
+            :visible.sync="updateDialogVisible"
+            width="30%"
+            @close="updateDialogVisible = false">
+        <el-input v-model="verifyId" placeholder="UserId"></el-input>
+        <el-input v-model="verifyPassword" type="password" placeholder="Password"></el-input>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="cancelUpdate">Cancel</el-button>
+            <el-button type="primary" @click="confirmUpdate">Confirm</el-button>
+        </span>
+    </el-dialog>
+
+</div>
+
+<script>
+    new Vue({
+        el: '#adminPage',
+        data: function () {
+            return {
+                pageTitle: 'Admin Page',
+                currentPage: 'index',
+                showPassword: false,
+                user: {
+                    value: JSON.parse(localStorage.getItem('user'))
+                },
+                dialogVisible: false,
+                deleteUsername: '',
+                deletePassword: '',
+                updateDialogVisible: false,
+                verifyId: '',  // 这里修改了
+                verifyPassword: '',
+                users: [],
+                currentPageNum: 1,
+                totalCount: 0,
+                selectedUserType: 'all users',
+                searchTerm: '',  // 用于存储搜索框中的输入
+                searchMode: 'byName',  // 用于确定是通过用户名搜索还是通过用户ID搜索，默认值是'byName'
+            }
+        },
+        methods: {
+            handleSelect(key) {
+                this.currentPage = key;
+                if (key === 'edit') {
+                    this.getUsers();
+                }
+            },
+            updateUser() {
+                this.verifyId = this.user.value.value.userId;
+                this.verifyPassword = '';  // 添加一行来清除旧的密码
+                this.updateDialogVisible = true;
+            },
+            confirmUpdate() {
+                this.updateDialogVisible = false;
+                axios.put('/users/update_self_account', {
+                    verifyId: this.verifyId,
+                    verifyPassword: this.verifyPassword,
+                    user: {
+                        userId: this.user.value.value.userId,
+                        username: this.user.value.value.username,
+                        password: this.user.value.value.password,
+                        role: this.user.value.value.role
+                    }
+                })
+                    .then((response) => {
+                        let expirationDate = JSON.parse(localStorage.getItem('user')).expires;
+                        localStorage.setItem('user', JSON.stringify({
+                            value: response.data,
+                            expires: expirationDate
+                        }));
+                        this.user.value.value = response.data;
+                        this.$message({
+                            message: 'Account update successful!',
+                            type: 'success'
+                        });
+                    })
+                    .catch((error) => {
+                        this.user.value.value.username = JSON.parse(localStorage.getItem('user')).value.username;
+                        this.user.value.value.password = JSON.parse(localStorage.getItem('user')).value.password;
+                        this.$message({
+                            message: error.response.data,
+                            type: 'error'
+                        });
+                    });
+            },
+            cancelUpdate() {
+                this.updateDialogVisible = false;
+            },
+            logout() {
+                // 删除本地存储的用户信息和 token
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                // 跳转到登录页面
+                window.location.href = '/login.html';
+            },
+            showLocalMessage() {
+                alert("username: " + this.user.value.username + "\n" +
+                    "password: " + this.user.value.password + "\n" +
+                    "id: " + this.user.value.id + "\n" +
+                    "role: " + this.user.value.role + "\n" +
+                    "user: " + this.user.value + "\n" +
+                    "user: " + this.user)
+            },
+            deleteUser() {
+                if (!this.dialogVisible) {
+                    // 第一次点击删除按钮时，显示对话框
+                    this.dialogVisible = true;
+                } else {
+                    // 用户点击对话框中的确认按钮时，发送删除请求
+                    axios.delete('/users/delete_self_account', {
+                        data: {
+                            username: this.deleteUsername,
+                            password: this.deletePassword
+                        }
+                    })
+                        .then((response) => {
+                            // 请求成功，处理响应
+                            // 删除本地存储的用户信息和 token
+                            localStorage.removeItem('user');
+                            localStorage.removeItem('token');
+                            // 跳转到登录页面并显示成功删除的消息
+                            this.$message({
+                                message: 'Account deletion successful!',
+                                type: 'success'
+                            });
+                            setTimeout(() => {
+                                window.location.href = '/login.html';
+                            }, 2000);
+                        })
+                        .catch((error) => {
+                            // 请求失败，处理错误
+                            // 显示错误消息
+                            this.$message({
+                                message: error.response.data,
+                                type: 'error'
+                            });
+                        });
+                }
+            },
+            cancelDelete() {
+                this.dialogVisible = false;
+            },
+            getUsers() {
+                axios.get('/users/get_users', {
+                    params: {
+                        pageNum: this.currentPageNum,
+                        pageSize: 30
+                    }
+                })
+                    .then(response => {
+                        this.users = response.data.users;
+                        this.totalCount = response.data.totalCount;
+                    })
+                    .catch(error => {
+                        this.$message({
+                            message: error.response.data,
+                            type: 'error'
+                        });
+                    });
+            },
+            handleSizeChange(val) {
+                this.currentPageNum = val;
+                this.getUsers();
+            },
+            handleCurrentChange(val) {
+                this.currentPageNum = val;
+                this.getUsers();
+            },
+            handleUserTypeChange(newVal) {
+                if (newVal === 'norm users') {
+                    this.getNormUsers();
+                } else {
+                    this.getUsers();
+                }
+            },
+            getNormUsers() {
+                axios.get('/users/get_norm_users', {
+                    params: {
+                        pageNum: this.currentPageNum,
+                        pageSize: 30
+                    }
+                })
+                    .then(response => {
+                        this.users = response.data.users;
+                        this.totalCount = response.data.totalCount;
+                    })
+                    .catch(error => {
+                        this.$message({
+                            message: error.response.data,
+                            type: 'error'
+                        });
+                    });
+            },
+            searchUsers() {
+                let url = '/users/get_';
+
+                // Check if searchTerm is empty
+                if (this.searchTerm === '') {
+                    this.$message({
+                        message: 'Search term cannot be empty.',
+                        type: 'warning'
+                    });
+                    return;
+                }
+
+                // Check if ID search is selected and searchTerm is not a number
+                if (this.searchMode === 'byId' && isNaN(this.searchTerm)) {
+                    this.$message({
+                        message: 'Please enter a valid user ID for ID search.',
+                        type: 'warning'
+                    });
+                    return;
+                }
+
+                // Determine the API url based on searchMode and selectedUserType
+                if (this.selectedUserType === 'norm users') {
+                    url += 'norm_';
+                }
+                if (this.searchMode === 'byId') {
+                    url += 'by_id/' + this.searchTerm;
+                } else {
+                    url += 'by_name/' + this.searchTerm;
+                }
+
+                // Send the GET request
+                axios.get(url, {
+                    params: {
+                        pageNum: this.currentPageNum,
+                        pageSize: 30
+                    }
+                })
+                    .then(response => {
+                        // Check if the response data is an array or a single object
+                        if (Array.isArray(response.data.users)) {
+                            this.users = response.data.users;
+                            this.totalCount = response.data.totalCount;
+                        } else {
+                            // If it is a single object (i.e., when searching by user ID), create an array with the single object
+                            this.users = [response.data];
+                            this.totalCount = 1;
+                        }
+                    })
+                    .catch(error => {
+                        this.$message({
+                            message: error.response.data,
+                            type: 'error'
+                        });
+                    });
+            },
+            confirmDelete(userId) {
+                this.$confirm('This will permanently delete the user. Continue?', 'Warning', {
+                    confirmButtonText: 'OK',
+                    cancelButtonText: 'Cancel',
+                    type: 'warning'
+                }).then(() => {
+                    axios.delete(`/users/delete_norm_by_id/${userId}`)
+                        .then((response) => {
+                            this.$message({
+                                type: 'success',
+                                message: 'Delete user success!'
+                            });
+                            this.refreshPage();
+                        }).catch((error) => {
+                        this.$message({
+                            type: 'error',
+                            message: 'Delete user failed!'
+                        });
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: 'User deletion cancelled!'
+                    });
+                });
+            },
+            refreshPage() {
+                if (this.searchTerm === '') {
+                    this.currentPageNum = 1;
+                    this.getUsers();
+                } else if (this.searchMode === 'byId') {
+                    axios.get(`/users/get_by_id/${this.searchTerm}`)
+                        .then(response => {
+                            this.users = [response.data];
+                            this.totalCount = 1;
+                        })
+                        .catch(error => {
+                            this.$message({
+                                type: 'error',
+                                message: error.response.data
+                            });
+                        });
+                } else {
+                    this.searchUsers();
+                }
+            }
+        },
+        created() {
+            let token = JSON.parse(localStorage.getItem('token'));
+            if (!token || new Date().getTime() > token.expires) {
+                window.location.href = '/login.html';
+            }
+        },
+        watch: {
+            searchMode() {
+                this.users = [];
+                this.totalCount = 0;
+            },
+            selectedUserType() {
+                this.users = [];
+                this.totalCount = 0;
+            },
+        }
+    });
+</script>
+
+</body>
+</html>
