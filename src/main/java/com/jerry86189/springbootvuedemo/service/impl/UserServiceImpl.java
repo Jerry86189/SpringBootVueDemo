@@ -7,7 +7,6 @@ package com.jerry86189.springbootvuedemo.service.impl;/**
  */
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jerry86189.springbootvuedemo.dto.LoginResponse;
@@ -22,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.security.auth.login.LoginException;
 import java.util.List;
 
 /**
@@ -183,7 +181,7 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.selectById(id);
 
         if (user == null) {
-            throw new UserNotFoundException("Your account: " + id + " not found");
+            throw new NotFoundException("Your account: " + id + " not found");
         }
 
         return user;
@@ -205,7 +203,7 @@ public class UserServiceImpl implements UserService {
         Page<User> userPage = userMapper.selectPage(page, queryWrapper);
 
         if (userPage.getRecords().isEmpty()) {
-            throw new UserNotFoundException("No users found with a username like: " + username);
+            throw new NotFoundException("No users found with a username like: " + username);
         }
 
         return userPage.getRecords();
@@ -269,7 +267,7 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.selectOne(queryWrapper);
 
         if (user == null) {
-            throw new UserNotFoundException("User with id: " + id + " not found or is not a normal user");
+            throw new NotFoundException("User with id: " + id + " not found or is not a normal user");
         }
 
         return user;
@@ -287,7 +285,7 @@ public class UserServiceImpl implements UserService {
     public List<User> getNormUserByUsername(String username, int pageNum, int pageSize) {
         Page<User> page = new Page<>(pageNum, pageSize);
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", username);
+        queryWrapper.like("username", username);
         IPage<User> userPage = userMapper.selectPage(page, queryWrapper);
 
         if (userPage == null || userPage.getRecords() == null) {
@@ -295,7 +293,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (userPage.getRecords().isEmpty()) {
-            throw new UserNotFoundException("No users found with username: " + username);
+            throw new NotFoundException("No users found with username: " + username);
         }
 
         return userPage.getRecords();

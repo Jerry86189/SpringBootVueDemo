@@ -227,8 +227,8 @@ public class UserManageController {
      * @param e UserNotFoundException实例
      * @return HTTP状态码和错误信息，状态码为404
      */
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<String> handleUserNotFoundException(@NotNull UserNotFoundException e) {
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<String> handleUserNotFoundException(@NotNull NotFoundException e) {
         System.out.println("enter handleUserNotFoundException");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }

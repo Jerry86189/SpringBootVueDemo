@@ -11,10 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.ArrayList;
@@ -323,7 +321,7 @@ public class UserServiceImplTest {
 
         when(userMapper.selectOne(any())).thenReturn(null);
 
-        assertThrows(UserNotFoundException.class, () -> {
+        assertThrows(NotFoundException.class, () -> {
             userService.getNormUserById(id);
         });
     }
@@ -400,7 +398,7 @@ public class UserServiceImplTest {
 
         when(userMapper.selectPage(any(), any())).thenReturn(userPage);
 
-        assertThrows(UserNotFoundException.class, () -> {
+        assertThrows(NotFoundException.class, () -> {
             userService.getNormUserByUsername(username, pageNum, pageSize);
         });
     }
