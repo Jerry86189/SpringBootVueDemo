@@ -94,8 +94,8 @@ public class FileInfoServiceImplTest {
     @Test
     public void testDownloadFile() {
         FileInfo fileInfo = new FileInfo();
-        fileInfo.setFileName("test.csv");
-        fileInfo.setFilePath("/tmp/test.csv");
+        fileInfo.setFileName("test1.csv");
+        fileInfo.setFilePath("/tmp/test1.csv");
 
         when(fileInfoMapper.selectById(anyLong())).thenReturn(fileInfo);
 
