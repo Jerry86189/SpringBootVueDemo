@@ -200,10 +200,14 @@ public class UserServiceImpl implements UserService {
         Page<User> page = new Page<>(pageNum, pageSize);
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.like("username", username);
-        Page<User> userPage = userMapper.selectPage(page, queryWrapper);
+        IPage<User> userPage = userMapper.selectPage(page, queryWrapper);
+
+        if (userPage == null || userPage.getRecords() == null) {
+            throw new PageQueryFailedException("Query page: " + pageNum + " failed");
+        }
 
         if (userPage.getRecords().isEmpty()) {
-            throw new NotFoundException("No users found with a username like: " + username);
+            throw new NotFoundException("No users found with username: " + username);
         }
 
         return userPage.getRecords();
@@ -249,6 +253,10 @@ public class UserServiceImpl implements UserService {
 
         if (userPage == null || userPage.getRecords() == null) {
             throw new PageQueryFailedException("Query page: " + pageNum + " failed");
+        }
+
+        if (userPage.getRecords().isEmpty()) {
+            throw new NotFoundException("No users found with Norm User");
         }
 
         return userPage.getRecords();
