@@ -33,6 +33,7 @@ import java.util.List;
 @RequestMapping("/users")
 @ControllerAdvice
 public class UserManageController {
+
     @Autowired
     private UserService userService;
 

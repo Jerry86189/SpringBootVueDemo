@@ -30,10 +30,13 @@ import java.io.Serializable;
 public class User implements Serializable {
     @TableId(value = "user_id", type = IdType.AUTO)
     private Long userId;
+
     @TableField("username")
     private String username;
+
     @TableField("password")
     private String password;
+
     @TableField(value = "role")
     private Role role;
 }
