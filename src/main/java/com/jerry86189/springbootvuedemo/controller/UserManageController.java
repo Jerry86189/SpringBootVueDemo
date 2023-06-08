@@ -180,7 +180,7 @@ public class UserManageController {
      * @return 用户信息列表和分页信息
      */
     @GetMapping("/get_users")
-    private ResponseEntity<GetUsersResponse> getUsersByPage(@RequestParam("pageNum") int pageNum, @RequestParam("pageSize") int pageSize) {
+    public ResponseEntity<GetUsersResponse> getUsersByPage(@RequestParam("pageNum") int pageNum, @RequestParam("pageSize") int pageSize) {
         List<User> users = userService.getAllUsersByPage(pageNum, pageSize);
         int totalCount = userService.getCountOfUsers();
 
